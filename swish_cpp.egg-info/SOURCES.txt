@@ -1,0 +1,7 @@
+README.md
+setup.py
+swish_function.cpp
+swish_cpp.egg-info/PKG-INFO
+swish_cpp.egg-info/SOURCES.txt
+swish_cpp.egg-info/dependency_links.txt
+swish_cpp.egg-info/top_level.txt
