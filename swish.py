@@ -26,9 +26,10 @@ class SWISHFunction(Function):
 
 
 class SWISH(nn.Module):
-    def __init__(self, x):
+    def __init__(self):
         super(SWISH, self).__init__()
-        self.x = x
+        # self.input_feature = input_feature
+        # self.output_feature = output_feature
         self.beta = nn.Parameter(torch.Tensor(1))
         self.beta.data.uniform_(0, 1.5)
 
