@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from util import AverageMeter, accuracy
-import time
+from swish import SWISH
 
 
 class Net(nn.Module):
@@ -16,12 +16,11 @@ class Net(nn.Module):
             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
+            SWISH(),
             nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=False),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            # nn.AdaptiveAvgPool2d((1, 1)),
+            SWISH(),
         )
 
         self.fc1 = nn.Linear(8*8*128, 128)
@@ -96,10 +95,10 @@ def main():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=64, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=50, metavar='N',
-                        help='number of epochs to train (default: 50)')
-    parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
-                        help='learning rate (default: 0.01)')
+    parser.add_argument('--epochs', type=int, default=80, metavar='N',
+                        help='number of epochs to train (default: 80)')
+    parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
+                        help='learning rate (default: 0.1)')
     parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
                         help='SGD momentum (default: 0.5)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
@@ -141,14 +140,12 @@ def main():
     # model.load_state_dict(torch.load("student_relu.pt"))
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
-    start_time = time.time()
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        print("Training Time:", time.time()-start_time)
         test(args, model, device, test_loader)
 
     if (args.save_model):
-        torch.save(model.state_dict(),"student_relu0.1.pt")
+        torch.save(model.state_dict(),"student_swish.pt")
 
 if __name__ == '__main__':
     main()

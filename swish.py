@@ -34,4 +34,4 @@ class SWISH(nn.Module):
         self.beta.data.uniform_(0, 1.5)
 
     def forward(self, x):
-        return LLTMFunction.apply(x, self.beta)
+        return SWISHFunction.apply(x, self.beta)
