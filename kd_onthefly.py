@@ -1,5 +1,3 @@
-"""Main entrance for train/eval with/without KD on CIFAR-10"""
-
 import argparse
 import logging
 import os
@@ -34,13 +32,6 @@ def fetch_teacher_outputs(teacher_model, dataloader):
     return teacher_outputs
 
 def loss_fn_kd(outputs, labels, teacher_outputs, params):
-    """
-    Compute the knowledge-distillation (KD) loss given outputs, labels.
-    "Hyperparameters": temperature and alpha
-
-    NOTE: the KL Divergence for PyTorch comparing the softmaxs of teacher
-    and student expects the input tensor to be log probabilities! See Issue #2
-    """
     alpha = params.alpha
     T = params.temperature
     KD_loss = nn.KLDivLoss()(F.log_softmax(outputs/T, dim=1),
@@ -50,19 +41,9 @@ def loss_fn_kd(outputs, labels, teacher_outputs, params):
     return KD_loss
 
 def train_kd_on_the_fly(args, model, teacher, device, optimizer, dataloader, epoch):
-    """Train the model on `num_steps` batches
-
-    Args:
-        model: (torch.nn.Module) the neural network
-        optimizer: (torch.optim) optimizer for parameters of model
-        loss_fn_kd:
-        dataloader:
-        metrics: (dict)
-        params: (Params) hyperparameters
-    """
-
     # set model to training mode
     model.train()
+    teacher.eval()
     top1 = AverageMeter()
     top5 = AverageMeter()
 
