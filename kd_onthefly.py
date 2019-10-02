@@ -1,3 +1,4 @@
+"""Main entrance for train/eval with/without KD on CIFAR-10"""
 
 import argparse
 import logging
@@ -33,6 +34,13 @@ def fetch_teacher_outputs(teacher_model, dataloader):
     return teacher_outputs
 
 def loss_fn_kd(outputs, labels, teacher_outputs, params):
+    """
+    Compute the knowledge-distillation (KD) loss given outputs, labels.
+    "Hyperparameters": temperature and alpha
+
+    NOTE: the KL Divergence for PyTorch comparing the softmaxs of teacher
+    and student expects the input tensor to be log probabilities! See Issue #2
+    """
     alpha = params.alpha
     T = params.temperature
     KD_loss = nn.KLDivLoss()(F.log_softmax(outputs/T, dim=1),
@@ -40,68 +48,6 @@ def loss_fn_kd(outputs, labels, teacher_outputs, params):
               F.cross_entropy(outputs, labels) * (1. - alpha)
 
     return KD_loss
-
-# Defining train_kd & train_and_evaluate_kd functions
-def train_kd(args, model, teacher_outputs, device, optimizer, dataloader, epoch):
-
-    # set model to training mode
-    model.train()
-    top1 = AverageMeter()
-    top5 = AverageMeter()
-
-    for i, (train_batch, labels_batch) in enumerate(dataloader):
-        # convert to torch Variables
-        train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
-
-        # compute model output, fetch teacher output, and compute KD loss
-        output_batch = model(train_batch)
-
-        # get one batch output from teacher_outputs list
-        output_teacher_batch = torch.from_numpy(teacher_outputs[i])
-        output_teacher_batch = Variable(output_teacher_batch, requires_grad=False)
-
-        loss = loss_fn_kd(output_batch, labels_batch, output_teacher_batch, args)
-        prec1, prec5 = accuracy(output_batch.data, labels_batch.data, topk=(1, 5))
-        # losses.update(loss.data[0], data.size(0))
-        top1.update(prec1[0], train_batch.size(0))
-        top5.update(prec5[0], train_batch.size(0))
-
-        # clear previous gradients, compute gradients of all variables wrt loss
-        optimizer.zero_grad()
-        loss.backward()
-
-        # performs updates using calculated gradients
-        optimizer.step()
-
-        # Evaluate summaries only once in a while
-        if i % args.log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)], Loss: {:.6f}, Top1:{:.3f}, Top5:{:.3f}'.format(
-                epoch, i * len(train_batch), len(dataloader.dataset),
-                100. * i / len(dataloader), loss.item(), top1.avg, top5.avg))
-
-def test_kd(args, model, device, teacher_outputs, test_loader):
-    model.eval()
-    test_loss = 0
-    # correct = 0
-    top1t = AverageMeter()
-    top5t = AverageMeter()
-    with torch.no_grad():
-        for i, (data, target) in enumerate(test_loader):
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-
-            output_teacher_batch = torch.from_numpy(teacher_outputs[i])
-            output_teacher_batch = Variable(output_teacher_batch, requires_grad=False)
-            test_loss = loss_fn_kd(output, target, output_teacher_batch, args)
-
-            prec1, prec5 = accuracy(output.data, target.data, topk=(1, 5))
-            top1t.update(prec1[0], data.size(0))
-            top5t.update(prec5[0], data.size(0))
-
-    test_loss /= len(test_loader.dataset)
-    print('\nTest set: Average loss: {:.4f}, Top1:{:.3f}, Top5:{:.3f}\n'.format(
-        test_loss, top1t.avg, top5t.avg))
-
 
 def train_kd_on_the_fly(args, model, teacher, device, optimizer, dataloader, epoch):
     """Train the model on `num_steps` batches
@@ -236,20 +182,8 @@ def main():
 
     start_time = time.time()
     if args.prerun:
-        teacher_outputs = fetch_teacher_outputs(teacher_model, train_loader)
-        teacher_outputs_test = fetch_teacher_outputs(teacher_model, test_loader)
-        print("Finish teacher outputs:", time.time()-start_time, "s")
-        train_start_time = time.time()
-        for epoch in range(1, args.epochs + 1):
-            train_kd(args, student_model, teacher_outputs, device, optimizer, train_loader, epoch)
-            train_time = time.time()
-            print("Training Time:", train_time-train_start_time)
-            test_kd(args, student_model, device, teacher_outputs_test, test_loader)
-            print("Testing Time:", time.time()-train_time)
-        # if epoch % 10 == 0:
-        #     torch.save(student_model.state_dict(),"kd_prerun_05_5.pt")
-        # torch.save(student_model.state_dict(),"kd_prerun_05_5.pt")
-    else:
+        # teacher_outputs = fetch_teacher_outputs(teacher_model, train_loader)
+        # teacher_outputs_test = fetch_teacher_outputs(teacher_model, test_loader)
         print("Finish teacher outputs:", time.time()-start_time, "s")
         train_start_time = time.time()
         for epoch in range(1, args.epochs + 1):
@@ -258,6 +192,9 @@ def main():
             print("Training Time:", train_time-train_start_time)
             test_kd_on_the_fly(args, student_model, device, teacher_model, test_loader)
             print("Testing Time:", time.time()-train_time)
+        # if epoch % 10 == 0:
+        #     torch.save(student_model.state_dict(),"kd_prerun_05_5.pt")
+        # torch.save(student_model.state_dict(),"kd_prerun_05_5.pt")
 
 if __name__ == '__main__':
     main()
