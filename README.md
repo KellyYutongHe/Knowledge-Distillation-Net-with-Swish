@@ -1,6 +1,5 @@
-# svl_video_test
-
-This is Kelly He’s submission for SVL video research coding assessment. [Here](https://docs.google.com/document/d/1kWkoZbcsIklhWM9ORHZY4a1gSNI69jdmjC_t5Db1x78/edit?usp=sharing) is the link to the google doc report. Main files you may be interested in are the following:
+# Knowledge Distillation Net wirh Swish
+[Here](https://docs.google.com/document/d/1kWkoZbcsIklhWM9ORHZY4a1gSNI69jdmjC_t5Db1x78/edit?usp=sharing) is the link to the google doc report. Main files you may be interested in are the following:
 - student.py: student network, training and testing with ReLu
 - student_swish.py: student network, training and testing with Swish
 - resnet.py: teacher network, training and testing with Swish
