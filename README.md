@@ -1,4 +1,4 @@
-# Knowledge Distillation Net wirh Swish
+# Knowledge Distillation Net with Swish
 Main files you may be interested in are the following:
 - student.py: student network, training and testing with ReLu
 - student_swish.py: student network, training and testing with Swish
